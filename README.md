@@ -34,25 +34,48 @@ The Franz ticketing service uses Kafka as its central message broker, enabling:
 - **Reliable Delivery**: Kafka's replication ensures no ticket events are lost
 - **Real-time Analytics**: Stream processing enables real-time ticket metrics and monitoring
 
+### Services
+
+#### absturz
+
+A Go-based monitoring service that reads error messages from the `errors` Kafka topic and sends notifications to Discord via webhooks. The name "absturz" (German for "crash") reflects its purpose of reporting system issues.
+
+**Features:**
+
+- Minimal dependencies (kafka-go + godotenv)
+- Rich Discord embed formatting
+- Graceful shutdown handling
+- Consumer group support for scalability
+
+See [absturz/README.md](absturz/README.md) for detailed documentation.
+
 ## Getting Started
 
 ### Prerequisites
 
 - Docker and Docker Compose
 - Python 3.x (for client applications)
+- Discord webhook URL (for error reporting via absturz)
 
 ### Running the Service
 
-Start the Kafka infrastructure using Docker Compose:
+1. Copy the environment example file and configure it:
 
-```bash
-docker-compose up -d
-```
+    ```bash
+    cp .env.example .env
+    # Edit .env and add your Discord webhook URL
+    ```
+
+2. Start the Kafka infrastructure using Docker Compose:
+
+    ```bash
+    docker-compose up -d
+    ```
 
 This will start:
 
-- Kafka broker(s)
-- Any additional supporting services
+- **Kafka broker** - Message streaming platform
+- **absturz** - Error reporting service that sends Kafka error messages to Discord
 
 ## Use Cases
 

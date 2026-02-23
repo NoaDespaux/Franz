@@ -20,6 +20,20 @@ services:
     networks:
       - kafka-network
 
+  absturz:
+    build: ./absturz
+    container_name: absturz
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_TOPIC: dlq
+      CONSUMER_GROUP: absturz
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+    restart: unless-stopped
+
 networks:
   kafka-network:
     driver: bridge
