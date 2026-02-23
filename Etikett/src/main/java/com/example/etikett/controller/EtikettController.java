@@ -2,12 +2,9 @@ package com.example.etikett.controller;
 
 import com.example.etikett.service.EtikettService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -15,7 +12,7 @@ import java.util.Map;
 @Tag(name = "Etikett Controller", description = "Basic controller for Etikett operations")
 public class EtikettController {
 
-    private EtikettService etikettService;
+    private final EtikettService etikettService;
 
     public EtikettController(EtikettService etikettService) {
         this.etikettService = etikettService;
@@ -28,4 +25,3 @@ public class EtikettController {
     }
 
 }
-
