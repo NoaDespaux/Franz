@@ -1,5 +1,7 @@
 package com.example.etikett.service;
 
+import com.example.etikett.model.FormattedTicket;
+import com.example.etikett.model.LabelizedTicket;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -11,14 +13,48 @@ import java.util.Map;
 @Service
 public class EtikettService {
 
-    public ResponseEntity<Map<String, String>> status() {
-        log.info("Status check requested");
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "up");
-        response.put("service", "Etikett API");
-        response.put("version", "1.0.0");
-        log.debug("Status response prepared: {}", response);
-        return ResponseEntity.ok(response);
+    private final OllamaClient ollamaClient;
+    private final LlmLabelParser llmLabelParser;
+
+    public EtikettService(OllamaClient ollamaClient, LlmLabelParser llmLabelParser) {
+        this.ollamaClient = ollamaClient;
+        this.llmLabelParser = llmLabelParser;
     }
 
+    public ResponseEntity<LabelizedTicket> label(FormattedTicket formattedTicket) {
+        log.info("Labeling ticket from '{}'", formattedTicket.getContact());
+
+        String prompt = buildPrompt(formattedTicket);
+        String llmText = ollamaClient.generate(prompt);
+        LabelizedTicket labeled = llmLabelParser.parse(llmText, formattedTicket);
+
+        log.info("Labeling complete: category={}, priority={}, type={}",
+                labeled.getCategory(), labeled.getPriority(), labeled.getType());
+
+        return ResponseEntity.ok(labeled);
+    }
+
+    private String buildPrompt(FormattedTicket ticket) {
+        return String.format("""
+                You are a ticket classifier. RESPOND ONLY WITH VALID JSON. NO EXPLANATIONS. NO EXTRA TEXT.
+
+                Ticket:
+                Contact: %s
+                Origin: %s
+                Date: %s
+                Body: %s
+
+                Valid category values: FRONT, BACK, INFRA, MOBILE
+                Valid priority values: NULL, LOW, MEDIUM, HIGH
+                Valid type values: FEATURE_REQUEST, BUG
+
+                RESPOND WITH ONLY THIS JSON FORMAT, NOTHING ELSE:
+                {"category":"BACK","priority":"MEDIUM","type":"BUG"}
+                """,
+                ticket.getContact(),
+                ticket.getOrigin(),
+                ticket.getDate(),
+                ticket.getBody()
+        );
+    }
 }

@@ -96,7 +96,7 @@ See [discord-kummerkasten/README.md](discord-kummerkasten/README.md) for detaile
 2. Start the Kafka infrastructure using Docker Compose:
 
     ```bash
-    docker-compose up -d
+    docker compose up -d
     ```
 
 This will start:
