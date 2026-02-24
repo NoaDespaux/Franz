@@ -1,11 +1,11 @@
 package com.example.etikett.kafka;
 
-import com.example.etikett.config.KafkaTopicsProperties;
 import com.example.etikett.model.FormattedTicket;
 import com.example.etikett.model.LabelizedTicket;
 import com.example.etikett.service.EtikettService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -16,18 +16,28 @@ public class TicketLabelingKafkaListener {
 
     private final EtikettService etikettService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final KafkaTopicsProperties topicsProperties;
     private final ObjectMapper objectMapper;
+
+    @Value("${kafka.topics.input}")
+    private String inputTopic;
+
+    @Value("${kafka.topics.output}")
+    private String outputTopic;
+
+    @Value("${kafka.topics.dlq}")
+    private String dlqTopic;
 
     public TicketLabelingKafkaListener(
             EtikettService etikettService,
-            KafkaTemplate<String, Object> kafkaTemplate,
-            KafkaTopicsProperties topicsProperties) {
+            KafkaTemplate<String, Object> kafkaTemplate) {
         this.etikettService = etikettService;
         this.kafkaTemplate = kafkaTemplate;
-        this.topicsProperties = topicsProperties;
         this.objectMapper = new ObjectMapper();
-        log.info("TicketLabelingKafkaListener initialized, listening on topic: {}", topicsProperties.getInput());
+    }
+
+    @org.springframework.context.event.EventListener(org.springframework.context.event.ContextRefreshedEvent.class)
+    public void logInitialization() {
+        log.info("TicketLabelingKafkaListener initialized, listening on topic: {}", inputTopic);
     }
 
     @KafkaListener(topics = "${kafka.topics.input}", groupId = "${spring.kafka.consumer.group-id}")
@@ -56,12 +66,12 @@ public class TicketLabelingKafkaListener {
                 // Log full labeled payload for local verification
                 log.info("Labeled ticket payload: {}", labelizedTicket);
                 // Send result to output topic
-                kafkaTemplate.send(topicsProperties.getOutput(),
+                kafkaTemplate.send(outputTopic,
                         formattedTicket.getContact(),
                         labelizedTicket);
 
                 log.info("Published labeled ticket to Kafka topic '{}': category={}, priority={}, type={}",
-                        topicsProperties.getOutput(),
+                        outputTopic,
                         labelizedTicket.getCategory(),
                         labelizedTicket.getPriority(),
                         labelizedTicket.getType());
@@ -104,7 +114,6 @@ public class TicketLabelingKafkaListener {
      */
     private void sendToErrorDlq(FormattedTicket formattedTicket, String errorReason) {
         try {
-            String dlqTopic = topicsProperties.getDlq();
             if (dlqTopic != null && !dlqTopic.isBlank()) {
                 // Create error payload with original ticket and error details
                 String errorPayload = String.format(

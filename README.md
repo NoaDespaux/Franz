@@ -76,6 +76,19 @@ A Discord bot (TypeScript/Node.js) that allows users to submit tickets directly 
 
 See [discord-kummerkasten/README.md](discord-kummerkasten/README.md) for detailed documentation.
 
+#### Etikett
+
+A Java/Spring Boot microservice that uses AI-powered classification to automatically label tickets with categories, priorities, and types. The name "etikett" (German for "label" or "tag") reflects its core function of adding structured metadata to tickets.
+
+**Features:**
+
+- Consumes formatted tickets from Kafka topic `tickets-formatted`
+- Uses Ollama LLM (llama3.1) for intelligent ticket classification
+- Automatically assigns category, priority, and type labels
+- Produces labeled tickets to Kafka topic `tickets-labeled`
+- Dead Letter Queue (DLQ) routing for invalid tickets to `tickets-labeled-dlq`
+- Validates ticket body length for reliable classification
+
 ## Getting Started
 
 ### Prerequisites

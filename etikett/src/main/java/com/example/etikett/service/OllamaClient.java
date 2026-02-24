@@ -1,9 +1,9 @@
 package com.example.etikett.service;
 
-import com.example.etikett.config.OllamaProperties;
 import com.example.etikett.dto.OllamaGenerateRequest;
 import com.example.etikett.dto.OllamaGenerateResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -15,26 +15,36 @@ import java.util.Map;
 public class OllamaClient {
 
     private final RestClient restClient;
-    private final OllamaProperties properties;
 
-    public OllamaClient(RestClient.Builder restClientBuilder, OllamaProperties properties) {
-        this.restClient = restClientBuilder.baseUrl(properties.getBaseUrl()).build();
-        this.properties = properties;
+    @Value("${ollama.base-url}")
+    private String baseUrl;
+
+    @Value("${ollama.model}")
+    private String model;
+
+    @Value("${ollama.temperature}")
+    private Double temperature;
+
+    @Value("${ollama.max-tokens}")
+    private Integer maxTokens;
+
+    public OllamaClient(RestClient.Builder restClientBuilder, @Value("${ollama.base-url}") String baseUrl) {
+        this.restClient = restClientBuilder.baseUrl(baseUrl).build();
     }
 
     public String generate(String prompt) {
         Map<String, Object> options = new HashMap<>();
-        options.put("temperature", properties.getTemperature());
-        options.put("num_predict", properties.getMaxTokens());
+        options.put("temperature", temperature);
+        options.put("num_predict", maxTokens);
 
         OllamaGenerateRequest request = new OllamaGenerateRequest(
-                properties.getModel(),
+                model,
                 prompt,
                 false,
                 options
         );
 
-        log.debug("Calling Ollama at {} with model {}", properties.getBaseUrl(), properties.getModel());
+        log.debug("Calling Ollama at {} with model {}", baseUrl, model);
 
         OllamaGenerateResponse response = restClient.post()
                 .uri("/api/generate")
@@ -49,4 +59,3 @@ public class OllamaClient {
         return response.getResponse();
     }
 }
-

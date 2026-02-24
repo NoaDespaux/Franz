@@ -41,16 +41,6 @@ public class EnvironmentConfig {
             log.error("Environment variable ({}) is not set!", variableName);
             throw new IllegalStateException("Required environment variable is not configured: " + variableName);
         }
-        log.info("  ✓ {} = {}", variableName, maskSensitiveValue(variableName, value));
-    }
-
-    private String maskSensitiveValue(String variableName, String value) {
-        // Mask sensitive values in logs
-        if (variableName.contains("PASSWORD") || variableName.contains("SECRET") || variableName.contains("TOKEN")) {
-            return "***";
-        }
-        return value;
     }
 
 }
-
