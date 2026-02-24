@@ -49,6 +49,19 @@ A Go-based monitoring service that reads error messages from the `errors` Kafka 
 
 See [absturz/README.md](absturz/README.md) for detailed documentation.
 
+#### discord-kummerkasten
+
+A Discord bot (TypeScript/Node.js) that allows users to submit tickets directly from Discord using the `/ticket` slash command. The name "kummerkasten" (German for "suggestion box") reflects its purpose as a ticket submission interface.
+
+**Features:**
+
+- Discord slash command integration (`/ticket`)
+- Publishes tickets to Kafka topic `discordMSG`
+- JSON message format with username, message, and timestamp
+- Ephemeral replies for user privacy
+
+See [discord-kummerkasten/README.md](discord-kummerkasten/README.md) for detailed documentation.
+
 ## Getting Started
 
 ### Prerequisites
@@ -63,7 +76,7 @@ See [absturz/README.md](absturz/README.md) for detailed documentation.
 
     ```bash
     cp .env.example .env
-    # Edit .env and add your Discord webhook URL
+    # Edit .env and add your Discord webhook URL and bot credentials
     ```
 
 2. Start the Kafka infrastructure using Docker Compose:
@@ -76,6 +89,7 @@ This will start:
 
 - **Kafka broker** - Message streaming platform
 - **absturz** - Error reporting service that sends Kafka error messages to Discord
+- **discord-kummerkasten** - Discord bot for ticket submission from Discord servers
 
 ## Use Cases
 

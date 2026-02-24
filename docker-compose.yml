@@ -34,6 +34,20 @@ services:
       - kafka-network
     restart: unless-stopped
 
+  discord-kummerkasten:
+    build: ./discord-kummerkasten
+    container_name: discord-kummerkasten
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      KAFKA_BROKER: kafka:29092
+      KAFKA_TOPIC: discordMSG
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+    restart: unless-stopped
+
 networks:
   kafka-network:
     driver: bridge

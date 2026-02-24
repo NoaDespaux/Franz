@@ -1,0 +1,30 @@
+{
+  "name": "discord-kummerkasten",
+  "version": "1.0.0",
+  "description": "Discord bot for submitting tickets to Kafka",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "deploy": "node dist/deploy-commands.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "kafka",
+    "tickets"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
