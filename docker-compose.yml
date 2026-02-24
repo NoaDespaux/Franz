@@ -97,7 +97,7 @@ services:
     restart: unless-stopped
 
   etikett:
-    build: ./Etikett
+    build: ./etikett
     container_name: etikett
     ports:
       - "8080:8080"
