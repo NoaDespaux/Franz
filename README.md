@@ -63,6 +63,18 @@ A Python-based microservice that consumes raw messages from the Discord bot, nor
 
 See [discord-aufbereitung/README.md](discord-aufbereitung/README.md) for detailed documentation.
 
+#### Mail Kummerkasten
+
+A Python microservice that acts as an entry point for emails into the ticketing system, bringing multi-channel support to Franz.
+
+**Features:**
+- Connects to standard IMAP servers (or local mock servers)
+- Periodically polls for unread emails and safely extracts the text body
+- Transforms email metadata (sender, subject, body) into a structured JSON format
+- Produces events to the `mailMSG` Kafka topic
+
+See [mail-kummerkasten/README.md](mail-kummerkasten/README.md) for detailed documentation.
+
 #### Discord Kummerkasten
 
 A Discord bot (TypeScript/Node.js) that allows users to submit tickets directly from Discord using the `/ticket` slash command. The name "kummerkasten" (German for "suggestion box") reflects its purpose as a ticket submission interface.
