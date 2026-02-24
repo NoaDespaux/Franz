@@ -36,7 +36,7 @@ The Franz ticketing service uses Kafka as its central message broker, enabling:
 
 ### Services
 
-#### absturz
+#### Absturz
 
 A Go-based monitoring service that reads error messages from the `errors` Kafka topic and sends notifications to Discord via webhooks. The name "absturz" (German for "crash") reflects its purpose of reporting system issues.
 
@@ -49,7 +49,21 @@ A Go-based monitoring service that reads error messages from the `errors` Kafka 
 
 See [absturz/README.md](absturz/README.md) for detailed documentation.
 
-#### discord-kummerkasten
+#### Discord Aufbereitung
+
+A Python-based microservice that consumes raw messages from the Discord bot, normalizes the data format, and produces structured tickets. The name "aufbereitung" (German for "processing" or "preparation") reflects its role in transforming raw input into formatted data.
+
+**Features:**
+
+- Consumes raw events from Kafka topic `discordMSG`
+- Normalizes data mapping `username` → `contact` and `message` → `body`
+- Produces formatted tickets to Kafka topic `tickets-formatted`
+- Dead Letter Queue (DLQ) routing for malformed JSON to `tickets-formatted-dlq`
+- Non-blocking asynchronous consumer/producer loop using `confluent-kafka`
+
+See [discord-aufbereitung/README.md](discord-aufbereitung/README.md) for detailed documentation.
+
+#### Discord Kummerkasten
 
 A Discord bot (TypeScript/Node.js) that allows users to submit tickets directly from Discord using the `/ticket` slash command. The name "kummerkasten" (German for "suggestion box") reflects its purpose as a ticket submission interface.
 
