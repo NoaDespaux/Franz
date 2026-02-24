@@ -33,6 +33,20 @@ services:
     networks:
       - kafka-network
     restart: unless-stopped
+  
+  discord-aufbereitung:
+    build: ./discord-aufbereitung
+    container_name: discord-aufbereitung
+    environment:
+      KAFKA_BROKER: kafka:29092
+      SOURCE_TOPIC: discordMSG
+      TARGET_TOPIC: tickets-formatted
+      DLQ_TOPIC: tickets-formatted-dlq
+      GROUP_ID: discord-aufbereitung
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
 
   discord-kummerkasten:
     build: ./discord-kummerkasten
