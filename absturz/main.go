@@ -131,6 +131,25 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen-3] + "..."
 }
 
+func waitForKafka(brokers []string, topic string, maxRetries int) error {
+	log.Printf("Waiting for Kafka to be ready and topic '%s' to exist...", topic)
+
+	for i := 0; i < maxRetries; i++ {
+		conn, err := kafka.DialLeader(context.Background(), "tcp", brokers[0], topic, 0)
+		if err == nil {
+			conn.Close()
+			log.Println("Kafka is ready and topic exists!")
+			return nil
+		}
+
+		waitTime := time.Duration(i+1) * 2 * time.Second
+		log.Printf("Kafka not ready yet (attempt %d/%d), waiting %v... Error: %v", i+1, maxRetries, waitTime, err)
+		time.Sleep(waitTime)
+	}
+
+	return fmt.Errorf("failed to connect to Kafka after %d attempts", maxRetries)
+}
+
 func main() {
 	log.Println("Starting absturz - Kafka to Discord error reporter")
 
@@ -143,6 +162,11 @@ func main() {
 	log.Printf("Connecting to Kafka brokers: %v", config.KafkaBrokers)
 	log.Printf("Topic: %s", config.KafkaTopic)
 	log.Printf("Consumer Group: %s", config.ConsumerGroup)
+
+	// Wait for Kafka to be ready
+	if err := waitForKafka(config.KafkaBrokers, config.KafkaTopic, 10); err != nil {
+		log.Fatalf("Failed to connect to Kafka: %v", err)
+	}
 
 	// Create Kafka reader
 	reader := kafka.NewReader(kafka.ReaderConfig{
