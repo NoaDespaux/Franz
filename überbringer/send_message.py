@@ -5,23 +5,38 @@ Edit the variables below to change what you send
 """
 
 # ========== EDIT THESE ==========
-TOPIC = "messages"
-MESSAGE = "Hello from Kafka!"
+DEFAULT_TOPIC = "discordMSG"
+DEFAULT_MESSAGE = "Hello from Kafka!"
 KAFKA_SERVER = "localhost:9092"
 # ================================
 
 from kafka import KafkaProducer
 
 def send_message():
+    topic = input(f"Topic to send to (default: {DEFAULT_TOPIC}): ").strip()
+    if not topic:
+        topic = DEFAULT_TOPIC
+    
     producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
     
-    # Send the message
-    producer.send(TOPIC, MESSAGE.encode('utf-8'))
-    producer.flush()
+    print(f"✓ Sending to topic '{topic}'")
+    print("Type your messages below (Ctrl+C to stop)\n")
     
-    print(f"✓ Sent to topic '{TOPIC}': {MESSAGE}")
-    
-    producer.close()
+    try:
+        while True:
+            message = input(f"Message (default: {DEFAULT_MESSAGE}): ").strip()
+            if not message:
+                message = DEFAULT_MESSAGE
+            
+            # Send the message
+            producer.send(topic, message.encode('utf-8'))
+            producer.flush()
+            
+            print(f"✓ Sent: {message}\n")
+    except KeyboardInterrupt:
+        print("\n\n✓ Stopped sending")
+    finally:
+        producer.close()
 
 if __name__ == "__main__":
     send_message()
