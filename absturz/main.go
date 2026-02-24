@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -42,7 +44,7 @@ type DiscordEmbedField struct {
 // Config holds the application configuration
 type Config struct {
 	KafkaBrokers   []string
-	KafkaTopic     string
+	KafkaTopics    []string
 	ConsumerGroup  string
 	DiscordWebhook string
 }
@@ -51,15 +53,26 @@ func loadConfig() (*Config, error) {
 	// Load .env file if it exists
 	_ = godotenv.Load()
 
+	topicsStr := getEnv("KAFKA_TOPICS", "dlq")
+	topics := strings.Split(topicsStr, ",")
+	// Trim whitespace from each topic
+	for i := range topics {
+		topics[i] = strings.TrimSpace(topics[i])
+	}
+
 	config := &Config{
 		KafkaBrokers:   strings.Split(getEnv("KAFKA_BROKERS", "localhost:9092"), ","),
-		KafkaTopic:     getEnv("KAFKA_TOPIC", "errors"),
+		KafkaTopics:    topics,
 		ConsumerGroup:  getEnv("CONSUMER_GROUP", "absturz"),
 		DiscordWebhook: getEnv("DISCORD_WEBHOOK_URL", ""),
 	}
 
 	if config.DiscordWebhook == "" {
 		return nil, fmt.Errorf("DISCORD_WEBHOOK_URL environment variable is required")
+	}
+
+	if len(config.KafkaTopics) == 0 {
+		return nil, fmt.Errorf("at least one Kafka topic must be specified")
 	}
 
 	return config, nil
@@ -72,15 +85,20 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func sendToDiscord(webhookURL string, message string) error {
+func sendToDiscord(webhookURL string, topic string, message string) error {
 	// Format message as JSON if possible
 	formattedMsg := formatJSONMessage(message)
 
 	// Create embed with error information
 	embed := DiscordEmbed{
-		Title: "⚠️ Processing Failed",
-		Color: 15158332, // Red color
+		Title: fmt.Sprintf("⚠️ Processing Failed - %s", topic),
+		Color: getColorForTopic(topic),
 		Fields: []DiscordEmbedField{
+			{
+				Name:   "DLQ Topic",
+				Value:  "`" + topic + "`",
+				Inline: true,
+			},
 			{
 				Name:   "Content",
 				Value:  truncateString(formattedMsg, 1024),
@@ -131,23 +149,91 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen-3] + "..."
 }
 
-func waitForKafka(brokers []string, topic string, maxRetries int) error {
-	log.Printf("Waiting for Kafka to be ready and topic '%s' to exist...", topic)
+// getColorForTopic generates a consistent color for a topic name
+func getColorForTopic(topic string) int {
+	h := fnv.New32a()
+	h.Write([]byte(topic))
+	hash := h.Sum32()
+
+	// Generate a color that's vibrant and visible
+	// Use the hash to generate RGB values, avoiding too dark colors
+	r := int((hash>>16)&0xFF)>>1 + 64 // 64-191
+	g := int((hash>>8)&0xFF)>>1 + 64  // 64-191
+	b := int(hash&0xFF)>>1 + 64       // 64-191
+
+	return (r << 16) | (g << 8) | b
+}
+
+func waitForKafka(brokers []string, topics []string, maxRetries int) error {
+	log.Printf("Waiting for Kafka to be ready and topics %v to exist...", topics)
 
 	for i := 0; i < maxRetries; i++ {
-		conn, err := kafka.DialLeader(context.Background(), "tcp", brokers[0], topic, 0)
-		if err == nil {
+		allReady := true
+		for _, topic := range topics {
+			conn, err := kafka.DialLeader(context.Background(), "tcp", brokers[0], topic, 0)
+			if err != nil {
+				allReady = false
+				log.Printf("Topic '%s' not ready yet: %v", topic, err)
+				break
+			}
 			conn.Close()
-			log.Println("Kafka is ready and topic exists!")
+		}
+
+		if allReady {
+			log.Println("Kafka is ready and all topics exist!")
 			return nil
 		}
 
 		waitTime := time.Duration(i+1) * 2 * time.Second
-		log.Printf("Kafka not ready yet (attempt %d/%d), waiting %v... Error: %v", i+1, maxRetries, waitTime, err)
+		log.Printf("Kafka not ready yet (attempt %d/%d), waiting %v...", i+1, maxRetries, waitTime)
 		time.Sleep(waitTime)
 	}
 
 	return fmt.Errorf("failed to connect to Kafka after %d attempts", maxRetries)
+}
+
+func consumeTopic(ctx context.Context, wg *sync.WaitGroup, config *Config, topic string) {
+	defer wg.Done()
+
+	log.Printf("Starting consumer for topic: %s", topic)
+
+	// Create Kafka reader for this topic
+	reader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:     config.KafkaBrokers,
+		GroupID:     config.ConsumerGroup,
+		Topic:       topic,
+		MinBytes:    10e3,              // 10KB
+		MaxBytes:    10e6,              // 10MB
+		StartOffset: kafka.FirstOffset, // Read from beginning if no offset stored
+	})
+	defer reader.Close()
+
+	log.Printf("Consumer ready for topic: %s", topic)
+
+	// Start consuming
+	for {
+		msg, err := reader.ReadMessage(ctx)
+		if err != nil {
+			if ctx.Err() != nil {
+				// Context cancelled, shutting down
+				log.Printf("Consumer for topic %s shutting down", topic)
+				return
+			}
+			log.Printf("Error reading message from %s: %v", topic, err)
+			continue
+		}
+
+		log.Printf("Message received: topic=%s partition=%d offset=%d",
+			msg.Topic, msg.Partition, msg.Offset)
+
+		// Send to Discord
+		err = sendToDiscord(config.DiscordWebhook, topic, string(msg.Value))
+		if err != nil {
+			log.Printf("Error sending to Discord from %s: %v", topic, err)
+		} else {
+			log.Printf("Successfully sent message from %s to Discord", topic)
+		}
+	}
 }
 
 func main() {
@@ -160,24 +246,13 @@ func main() {
 	}
 
 	log.Printf("Connecting to Kafka brokers: %v", config.KafkaBrokers)
-	log.Printf("Topic: %s", config.KafkaTopic)
+	log.Printf("Monitoring topics: %v", config.KafkaTopics)
 	log.Printf("Consumer Group: %s", config.ConsumerGroup)
 
 	// Wait for Kafka to be ready
-	if err := waitForKafka(config.KafkaBrokers, config.KafkaTopic, 10); err != nil {
+	if err := waitForKafka(config.KafkaBrokers, config.KafkaTopics, 10); err != nil {
 		log.Fatalf("Failed to connect to Kafka: %v", err)
 	}
-
-	// Create Kafka reader
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     config.KafkaBrokers,
-		GroupID:     config.ConsumerGroup,
-		Topic:       config.KafkaTopic,
-		MinBytes:    10e3,              // 10KB
-		MaxBytes:    10e6,              // 10MB
-		StartOffset: kafka.FirstOffset, // Read from beginning if no offset stored
-	})
-	defer reader.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -186,39 +261,23 @@ func main() {
 	sigterm := make(chan os.Signal, 1)
 	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
 
-	log.Println("Consumer started, waiting for messages...")
+	// WaitGroup to track all consumer goroutines
+	var wg sync.WaitGroup
 
-	// Start consuming
-	go func() {
-		for {
-			msg, err := reader.ReadMessage(ctx)
-			if err != nil {
-				if ctx.Err() != nil {
-					// Context cancelled, shutting down
-					return
-				}
-				log.Printf("Error reading message: %v", err)
-				continue
-			}
+	// Start a consumer goroutine for each topic
+	for _, topic := range config.KafkaTopics {
+		wg.Add(1)
+		go consumeTopic(ctx, &wg, config, topic)
+	}
 
-			log.Printf("Message received: topic=%s partition=%d offset=%d",
-				msg.Topic, msg.Partition, msg.Offset)
-
-			// Send to Discord
-			err = sendToDiscord(config.DiscordWebhook, string(msg.Value))
-			if err != nil {
-				log.Printf("Error sending to Discord: %v", err)
-			} else {
-				log.Printf("Successfully sent message to Discord")
-			}
-		}
-	}()
+	log.Printf("All consumers started, monitoring %d DLQ topics...", len(config.KafkaTopics))
 
 	// Wait for interrupt signal
 	<-sigterm
 	log.Println("Shutting down gracefully...")
 	cancel()
 
-	// Give some time for graceful shutdown
-	time.Sleep(time.Second)
+	// Wait for all consumers to finish
+	wg.Wait()
+	log.Println("All consumers stopped. Shutdown complete.")
 }
