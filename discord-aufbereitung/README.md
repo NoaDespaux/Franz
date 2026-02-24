@@ -6,6 +6,7 @@ The name "aufbereitung" translates to "processing" or "preparation" in German, a
 ## Overview
 
 This service:
+
 1. **Consumes** raw JSON events from the `discordMSG` Kafka topic (typically sent by the `discord-kummerkasten` bot).
 2. **Transforms** the payloads into a normalized ticket format.
 3. **Produces** the cleanly formatted tickets to the `tickets-formatted` topic.
@@ -14,6 +15,7 @@ This service:
 ## Architecture Architecture
 
 Flow of the service:
+
 - Pulls from `discordMSG`
 - Validates and Normalizes JSON
 - Pushes success to `tickets-formatted`
@@ -32,6 +34,7 @@ Flow of the service:
 ## Payload Transformation Example
 
 **Incoming Format (from Discord bot):**
+
 ```json
 {
   "message": "I have an issue with my account",
@@ -41,6 +44,7 @@ Flow of the service:
 ```
 
 **Outgoing Format (Normalized Ticket):**
+
 ```json
 {
   "contact": "pontatot",
@@ -55,6 +59,7 @@ Flow of the service:
 The service is written in Python using `asyncio` and `confluent-kafka` for high-performance non-blocking I/O.
 
 To run it locally via Docker Compose (from the project root):
+
 ```bash
 docker compose up -d --build discord-aufbereitung
 ```
