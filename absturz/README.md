@@ -1,6 +1,14 @@
 # Absturz
 
-Absturz is a Go-based service that reads error messages from a Kafka topic and reports them to Discord via webhooks. The name "Absturz" is German for "crash" or "failure", reflecting its purpose of handling and reporting issues.
+Absturz is a Go-based service that monitors multiple Dead Letter Queue (DLQ) topics in Kafka and reports errors to Discord via webhooks.
+
+## Features
+
+- Monitor multiple DLQ topics simultaneously
+- Concurrent consumers for each topic
+- Color-coded Discord notifications per topic
+- Automatic topic name identification in alerts
+- Graceful shutdown handling
 
 ## Prerequisites
 
@@ -21,9 +29,18 @@ cp .env.example .env
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | `KAFKA_BROKERS` | Comma-separated list of Kafka brokers | `localhost:9092` |
-| `KAFKA_TOPIC` | Kafka topic to consume from | `dlz` |
+| `KAFKA_TOPICS` | Comma-separated list of DLQ topics to monitor | `dlq` |
 | `CONSUMER_GROUP` | Kafka consumer group ID | `absturz` |
 | `DISCORD_WEBHOOK_URL` | Discord webhook URL (required) | - |
+
+**Example:**
+
+```bash
+KAFKA_BROKERS=kafka1:9092,kafka2:9092
+KAFKA_TOPICS=discord-dlq,processing-dlq,enrichment-dlq
+CONSUMER_GROUP=absturz
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
 
 ### Discord Webhook Setup
 
@@ -59,7 +76,7 @@ docker build -t absturz .
 ```bash
 docker run -it --rm \
   -e KAFKA_BROKERS=kafka:9092 \
-  -e KAFKA_TOPIC=dlq \
+  -e KAFKA_TOPICS=discord-dlq,processing-dlq \
   -e CONSUMER_GROUP=absturz \
   -e DISCORD_WEBHOOK_URL=your_webhook_url \
   absturz
@@ -74,7 +91,7 @@ absturz:
   build: ./absturz
   environment:
     - KAFKA_BROKERS=kafka:9092
-    - KAFKA_TOPIC=dlq
+    - KAFKA_TOPICS=discord-dlq,processing-dlq,enrichment-dlq
     - CONSUMER_GROUP=absturz
     - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
   depends_on:
@@ -84,25 +101,33 @@ absturz:
 
 ## How It Works
 
-1. **Kafka Consumer**: Connects to Kafka using the Sarama library and joins a consumer group
-2. **Message Processing**: Reads messages from the configured topic
-3. **Discord Notification**: Formats each message as a Discord embed and sends it via webhook
-4. **Offset Management**: Marks messages as processed after successful delivery
+1. **Multi-Topic Monitoring**: Creates a separate consumer goroutine for each configured DLQ topic
+2. **Concurrent Processing**: All topics are monitored simultaneously with independent Kafka readers
+3. **Message Processing**: Reads messages from each configured topic
+4. **Discord Notification**: Formats each message as a Discord embed with:
+   - Topic name in the title
+   - Color-coded by topic (auto-generated from topic name)
+   - DLQ topic field showing the source
+   - Message content (formatted as JSON if applicable)
+5. **Offset Management**: Marks messages as processed after successful delivery
+6. **Graceful Shutdown**: Properly closes all consumers on SIGINT/SIGTERM
 
 ## Message Format
 
 Messages sent to Discord include:
 
-- Title indicating an issue was reported
-- Message content (truncated to 1024 characters if needed)
+- Title indicating the DLQ topic that failed (e.g., "⚠️ Processing Failed - discord-dlq")
+- DLQ Topic field showing the source topic
+- Message content (formatted as JSON if applicable, truncated to 1024 characters if needed)
 - Timestamp of when the message was received
-- Color-coded embed (red for errors)
+- Color-coded embed (unique color per topic, generated from topic name hash)
 
 ## Error Handling
 
 - If Discord webhook fails, the error is logged but processing continues
+- Each topic consumer handles errors independently
 - Kafka consumer errors are logged to stdout
-- Graceful shutdown on SIGINT/SIGTERM signals
+- Graceful shutdown waits for all consumer goroutines to complete
 
 ## Development
 
