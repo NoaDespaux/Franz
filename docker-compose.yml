@@ -1,4 +1,33 @@
 services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - kafka-network
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: ollama-pull
+    profiles: ["init"]
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: ollama:11434
+    volumes:
+      - ollama:/root/.ollama
+    entrypoint: ["ollama", "pull", "llama3.1:8b"]
+    networks:
+      - kafka-network
+
   kafka:
     image: apache/kafka:latest
     container_name: kafka
@@ -71,6 +100,32 @@ services:
       - kafka-network
     restart: unless-stopped
 
+  etikett:
+    build: ./etikett
+    container_name: etikett
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3.1
+      OLLAMA_TEMPERATURE: 0.2
+      OLLAMA_MAX_TOKENS: 256
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_CONSUMER_GROUP_ID: etikett
+      KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest
+      KAFKA_TOPIC_INPUT: tickets-formatted
+      KAFKA_TOPIC_OUTPUT: tickets-labeled
+      KAFKA_TOPIC_DLQ: tickets-labeled-dlq
+    depends_on:
+      kafka:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    networks:
+      - kafka-network
+    restart: unless-stopped
+
 networks:
   kafka-network:
     driver: bridge
+
+volumes:
+  ollama:
