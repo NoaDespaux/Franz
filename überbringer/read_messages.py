@@ -5,7 +5,7 @@ Edit the variables below to change what you read
 """
 
 # ========== EDIT THESE ==========
-TOPIC = "messages"
+DEFAULT_TOPIC = "discordMSG"
 KAFKA_SERVER = "localhost:9092"
 GROUP_ID = "Überbringer"
 # ================================
@@ -13,8 +13,12 @@ GROUP_ID = "Überbringer"
 from kafka import KafkaConsumer
 
 def read_messages():
+    topic = input(f"Topic to listen to (default: {DEFAULT_TOPIC}): ").strip()
+    if not topic:
+        topic = DEFAULT_TOPIC
+    
     consumer = KafkaConsumer(
-        TOPIC,
+        topic,
         bootstrap_servers=KAFKA_SERVER,
         group_id=GROUP_ID,
         auto_offset_reset='earliest',  # Start from beginning if no offset stored
@@ -22,7 +26,7 @@ def read_messages():
         value_deserializer=lambda m: m.decode('utf-8')
     )
     
-    print(f"✓ Listening to topic '{TOPIC}'...")
+    print(f"✓ Listening to topic '{topic}'...")
     print("Press Ctrl+C to stop\n")
     
     try:
