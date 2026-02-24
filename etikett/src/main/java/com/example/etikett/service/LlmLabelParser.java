@@ -32,9 +32,9 @@ public class LlmLabelParser {
 
             LabelizedTicket labelizedTicket = new LabelizedTicket();
             labelizedTicket.setFormattedTicket(formattedTicket);
-            labelizedTicket.setCategory(parseEnum(Category.class, node, "category", Category.BACK));
-            labelizedTicket.setPriority(parseEnum(Priority.class, node, "priority", Priority.NULL));
-            labelizedTicket.setType(parseEnum(Type.class, node, "type", Type.BUG));
+            labelizedTicket.setCategory(parseEnum(Category.class, node, "category"));
+            labelizedTicket.setPriority(parseEnum(Priority.class, node, "priority"));
+            labelizedTicket.setType(parseEnum(Type.class, node, "type"));
 
             return labelizedTicket;
         } catch (Exception e) {
@@ -78,24 +78,30 @@ public class LlmLabelParser {
         return json;
     }
 
-    private <E extends Enum<E>> E parseEnum(Class<E> enumType, JsonNode node, String field, E fallback) {
+    private <E extends Enum<E>> E parseEnum(Class<E> enumType, JsonNode node, String field) {
         if (node == null || !node.has(field)) {
-            log.warn("Missing field '{}' in LLM response, using fallback {}", field, fallback);
-            return fallback;
+            throw new IllegalStateException("Missing required field '" + field + "' in LLM response");
         }
 
         String value = node.get(field).asText("").trim().toUpperCase();
         if (value.isEmpty()) {
-            log.warn("Empty field '{}' in LLM response, using fallback {}", field, fallback);
-            return fallback;
+            throw new IllegalStateException("Empty value for required field '" + field + "' in LLM response");
         }
 
         try {
             return Enum.valueOf(enumType, value);
         } catch (IllegalArgumentException ex) {
-            log.warn("Unknown value '{}' for field '{}', using fallback {}", value, field, fallback);
-            return fallback;
+            throw new IllegalStateException("Invalid value '" + value + "' for field '" + field +
+                    "'. Expected one of: " + String.join(", ", getEnumNames(enumType)), ex);
         }
     }
-}
 
+    private <E extends Enum<E>> String[] getEnumNames(Class<E> enumType) {
+        E[] constants = enumType.getEnumConstants();
+        String[] names = new String[constants.length];
+        for (int i = 0; i < constants.length; i++) {
+            names[i] = constants[i].name();
+        }
+        return names;
+    }
+}
