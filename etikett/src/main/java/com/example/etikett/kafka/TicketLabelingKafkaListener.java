@@ -1,9 +1,9 @@
 package com.example.etikett.kafka;
 
+import com.example.etikett.dto.ErrorPayload;
 import com.example.etikett.model.FormattedTicket;
 import com.example.etikett.model.LabelizedTicket;
 import com.example.etikett.service.EtikettService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -16,7 +16,6 @@ public class TicketLabelingKafkaListener {
 
     private final EtikettService etikettService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final ObjectMapper objectMapper;
 
     @Value("${kafka.topics.input}")
     private String inputTopic;
@@ -32,7 +31,6 @@ public class TicketLabelingKafkaListener {
             KafkaTemplate<String, Object> kafkaTemplate) {
         this.etikettService = etikettService;
         this.kafkaTemplate = kafkaTemplate;
-        this.objectMapper = new ObjectMapper();
     }
 
     @org.springframework.context.event.EventListener(org.springframework.context.event.ContextRefreshedEvent.class)
@@ -116,10 +114,9 @@ public class TicketLabelingKafkaListener {
         try {
             if (dlqTopic != null && !dlqTopic.isBlank()) {
                 // Create error payload with original ticket and error details
-                String errorPayload = String.format(
-                        "{\"originalTicket\": %s, \"error\": \"%s\", \"timestamp\": %d}",
-                        convertToJson(formattedTicket),
-                        errorReason != null ? errorReason.replace("\"", "\\\"") : "Unknown error",
+                ErrorPayload errorPayload = new ErrorPayload(
+                        formattedTicket,
+                        errorReason != null ? errorReason : "Unknown error",
                         System.currentTimeMillis()
                 );
 
@@ -133,9 +130,5 @@ public class TicketLabelingKafkaListener {
         } catch (Exception dlqError) {
             log.error("Failed to send error to DLQ topic: {}", dlqError.getMessage(), dlqError);
         }
-    }
-
-    private String convertToJson(Object obj) throws Exception {
-        return objectMapper.writeValueAsString(obj);
     }
 }
