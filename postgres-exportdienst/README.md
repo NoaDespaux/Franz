@@ -1,8 +1,8 @@
-# Exportdienst
+# Postgres Exportdienst
 
-Exportdienst is a Go service that consumes labeled tickets from a Kafka topic and persists them into a PostgreSQL database.
+Postgres Exportdienst is a Go service that consumes labeled tickets from a Kafka topic and persists them into a PostgreSQL database.
 
-The name "exportdienst" translates to "export service" in German.
+The name "postgres-exportdienst" translates to "postgres export service" in German.
 
 ## Overview
 
@@ -50,7 +50,7 @@ Table: `tickets`
 | -------- | ----------- | ------- |
 | `KAFKA_BROKERS` | Comma-separated list of Kafka brokers | `localhost:9092` |
 | `KAFKA_TOPIC` | Topic to consume labeled tickets from | `tickets-labeled` |
-| `CONSUMER_GROUP` | Kafka consumer group ID | `exportdienst` |
+| `CONSUMER_GROUP` | Kafka consumer group ID | `postgres-exportdienst` |
 | `POSTGRES_DSN` | PostgreSQL connection string | `postgres://postgres:postgres@localhost:5432/tickets?sslmode=disable` |
 
 ## Running with Docker Compose
@@ -58,7 +58,7 @@ Table: `tickets`
 From the project root:
 
 ```bash
-docker compose up -d --build exportdienst
+docker compose up -d --build postgres-exportdienst
 ```
 
 > Requires `kafka` and `postgres` to be healthy first. Docker Compose handles this via `depends_on`.

@@ -5,7 +5,7 @@ A lightweight, Python-based FastAPI microservice that acts as the data provider 
 ## Features
 
 - **FastAPI Framework:** Delivers high-performance REST endpoints with automatic OpenAPI documentation.
-- **Direct PostgreSQL Integration:** Queries the `tickets_db` PostgreSQL instance (populated by `exportdienst`) to read the finalized, Llama-annotated tickets.
+- **Direct PostgreSQL Integration:** Queries the `tickets_db` PostgreSQL instance (populated by `postgres-exportdienst`) to read the finalized, Llama-annotated tickets.
 - **Aggregations on the Fly:** Executes SQL `GROUP BY` and `COUNT` queries to dynamically compute necessary KPIs for the frontend charts.
 - **CORS Configured:** Fully integrated with Cross-Origin Resource Sharing settings to allow local frontend apps to fetch data seamlessly.
 

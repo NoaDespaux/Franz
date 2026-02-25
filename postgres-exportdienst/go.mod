@@ -1,4 +1,4 @@
-module exportdienst
+module postgres-exportdienst
 
 go 1.21
 

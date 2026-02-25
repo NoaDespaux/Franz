@@ -113,9 +113,9 @@ A Java/Spring Boot microservice that uses AI-powered classification to automatic
 - Dead Letter Queue (DLQ) routing for invalid tickets to `tickets-labeled-dlq`
 - Validates ticket body length for reliable classification
 
-#### Exportdienst
+#### Postgres Exportdienst
 
-A Go-based data export service that persists labeled tickets from Kafka into a PostgreSQL database for long-term storage and querying. The name "exportdienst" (German for "export service") reflects its role in exporting and archiving ticket data.
+A Go-based data export service that persists labeled tickets from Kafka into a PostgreSQL database for long-term storage and querying. The name "postgres-exportdienst" (German for "postgres export service") reflects its role in exporting and archiving ticket data to PostgreSQL.
 
 **Features:**
 
