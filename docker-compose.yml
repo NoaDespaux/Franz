@@ -133,6 +133,21 @@ services:
       - kafka-network
     restart: unless-stopped
 
+  mail-aufbereitung:
+    build: ./mail-aufbereitung
+    container_name: mail-aufbereitung
+    environment:
+      KAFKA_BROKER: kafka:29092
+      SOURCE_TOPIC: mailMSG
+      TARGET_TOPIC: tickets-formatted
+      DLQ_TOPIC: tickets-formatted-dlq
+      GROUP_ID: mail-aufbereitung
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka-network
+
   mail-kummerkasten:
     build: ./mail-kummerkasten
     container_name: mail-kummerkasten

@@ -75,6 +75,18 @@ A Python microservice that acts as an entry point for emails into the ticketing 
 
 See [mail-kummerkasten/README.md](mail-kummerkasten/README.md) for detailed documentation.
 
+#### Mail Aufbereitung
+
+A Python-based microservice that consumes raw email events from the mail entry point, normalizes the data format (including prepending the topic subject to the body), and produces structured tickets identically to the Discord equivalent.
+
+**Features:**
+- Consumes raw events from Kafka topic `mailMSG`
+- Normalizes data mapping `sender` → `contact` and `message` → `body` while setting `origin` to `"Email"`
+- Produces formatted tickets to Kafka topic `tickets-formatted`
+- Dead Letter Queue (DLQ) routing for malformed JSON to `tickets-formatted-dlq`
+
+See [mail-aufbereitung/README.md](mail-aufbereitung/README.md) for detailed documentation.
+
 #### Discord Kummerkasten
 
 A Discord bot (TypeScript/Node.js) that allows users to submit tickets directly from Discord using the `/ticket` slash command. The name "kummerkasten" (German for "suggestion box") reflects its purpose as a ticket submission interface.
