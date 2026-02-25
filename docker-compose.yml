@@ -12,7 +12,7 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - kafka-network
+      - ollama-network
 
   ollama-pull:
     image: ollama/ollama:latest
@@ -26,7 +26,7 @@ services:
       - ollama:/root/.ollama
     entrypoint: ["ollama", "pull", "llama3.1:8b"]
     networks:
-      - kafka-network
+      - ollama-network
 
   kafka:
     image: apache/kafka:latest
@@ -121,6 +121,7 @@ services:
         condition: service_healthy
     networks:
       - kafka-network
+      - ollama-network
 
   greenmail:
     image: greenmail/standalone:2.0.1
@@ -132,7 +133,7 @@ services:
       - "3143:3143" # Port IMAP (pour lire les mails)
       - "8080:8080" # Interface Web optionnelle
     networks:
-      - kafka-network
+      - greenmail-network
     restart: unless-stopped
 
   mail-aufbereitung:
@@ -169,6 +170,7 @@ services:
         condition: service_started
     networks:
       - kafka-network
+      - greenmail-network
 
   postgres:
     image: postgres:16-alpine
@@ -186,7 +188,7 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - kafka-network
+      - postgres-network
     restart: unless-stopped
 
   exportdienst:
@@ -204,6 +206,7 @@ services:
         condition: service_healthy
     networks:
       - kafka-network
+      - postgres-network
     restart: unless-stopped
 
   armaturenbrett-api:
@@ -221,7 +224,7 @@ services:
       postgres:
         condition: service_started
     networks:
-      - kafka-network
+      - postgres-network
     restart: unless-stopped
 
   armaturenbrett-ui:
@@ -229,12 +232,16 @@ services:
     container_name: armaturenbrett-ui
     ports:
       - "3000:3000"
-    networks:
-      - kafka-network
     restart: unless-stopped
 
 networks:
   kafka-network:
+    driver: bridge
+  postgres-network:
+    driver: bridge
+  ollama-network:
+    driver: bridge
+  greenmail-network:
     driver: bridge
 
 volumes:
