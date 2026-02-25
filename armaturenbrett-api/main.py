@@ -111,6 +111,10 @@ def get_kpis():
             cur.execute("SELECT priority as name, COUNT(*) as value FROM tickets GROUP BY priority")
             kpis['by_priority'] = cur.fetchall()
             
+            # 5. Tickets by type
+            cur.execute("SELECT type as name, COUNT(*) as value FROM tickets GROUP BY type")
+            kpis['by_type'] = cur.fetchall()
+            
             return kpis
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
