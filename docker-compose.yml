@@ -222,6 +222,15 @@ services:
       - kafka-network
     restart: unless-stopped
 
+  armaturenbrett-ui:
+    build: ./armaturenbrett-ui
+    container_name: armaturenbrett-ui
+    ports:
+      - "3000:3000"
+    networks:
+      - kafka-network
+    restart: unless-stopped
+
 networks:
   kafka-network:
     driver: bridge
