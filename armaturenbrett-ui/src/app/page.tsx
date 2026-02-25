@@ -95,7 +95,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
         {/* Category Breakdown */}
         <Card className="col-span-1 border-zinc-800 bg-zinc-900">
           <CardHeader>
@@ -140,9 +140,9 @@ export default function Dashboard() {
         </Card>
 
         {/* Origin Breakdown */}
-        <Card className="col-span-2 border-zinc-800 bg-zinc-900">
+        <Card className="col-span-1 xl:col-span-1 border-zinc-800 bg-zinc-900">
           <CardHeader>
-            <CardTitle className="text-zinc-100">Tickets by Origin (Discord vs Email)</CardTitle>
+            <CardTitle className="text-zinc-100">Tickets by Origin</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
@@ -155,6 +155,28 @@ export default function Dashboard() {
                     cursor={{ fill: '#27272a' }}
                   />
                   <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Type Breakdown */}
+        <Card className="col-span-1 xl:col-span-2 border-zinc-800 bg-zinc-900">
+          <CardHeader>
+            <CardTitle className="text-zinc-100">Tickets by Type</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={kpis.by_type} layout="vertical" margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
+                  <XAxis type="number" stroke="#71717a" />
+                  <YAxis dataKey="name" type="category" stroke="#71717a" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#fff' }}
+                    cursor={{ fill: '#27272a' }}
+                  />
+                  <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -175,6 +197,7 @@ export default function Dashboard() {
                 <TableHead className="text-zinc-400">Contact</TableHead>
                 <TableHead className="text-zinc-400">Origin</TableHead>
                 <TableHead className="text-zinc-400">Category</TableHead>
+                <TableHead className="text-zinc-400">Type</TableHead>
                 <TableHead className="text-zinc-400">Priority</TableHead>
                 <TableHead className="text-zinc-400">Snippet</TableHead>
                 <TableHead className="text-right text-zinc-400">Date</TableHead>
@@ -191,6 +214,17 @@ export default function Dashboard() {
                     </Badge>
                   </TableCell>
                   <TableCell>{t.category}</TableCell>
+                  <TableCell>
+                    <Badge
+                      className={
+                        t.type === 'Bug' ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 shadow-none border-pink-500/20' :
+                          'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 shadow-none border-emerald-500/20'
+                      }
+                      variant="outline"
+                    >
+                      {t.type}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <Badge
                       className={
