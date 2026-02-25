@@ -204,6 +204,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      etikett:
+        condition: service_started
     networks:
       - kafka-network
       - postgres-network

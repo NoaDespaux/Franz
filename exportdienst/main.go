@@ -116,6 +116,11 @@ func main() {
 	defer db.Close()
 	log.Println("postgres connected and table ready")
 
+	// Wait a bit to avoid race condition with topic creation
+	// This ensures producers have time to create topics with initial data
+	log.Println("waiting for upstream services to initialize...")
+	time.Sleep(10 * time.Second)
+
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     cfg.KafkaBrokers,
 		Topic:       cfg.KafkaTopic,
