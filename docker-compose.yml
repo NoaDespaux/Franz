@@ -60,7 +60,7 @@ services:
     container_name: absturz
     environment:
       KAFKA_BROKERS: kafka:29092
-      KAFKA_TOPICS: tickets-formatted-dlq,dlq
+      KAFKA_TOPICS: discordMSG-dlq,mailMSG-dlq,tickets-formatted-dlq
       CONSUMER_GROUP: absturz
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
     depends_on:
@@ -77,7 +77,7 @@ services:
       KAFKA_BROKER: kafka:29092
       SOURCE_TOPIC: discordMSG
       TARGET_TOPIC: tickets-formatted
-      DLQ_TOPIC: tickets-formatted-dlq
+      DLQ_TOPIC: discordMSG-dlq
       GROUP_ID: discord-aufbereitung
     depends_on:
       kafka:
@@ -113,7 +113,7 @@ services:
       KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest
       KAFKA_TOPIC_INPUT: tickets-formatted
       KAFKA_TOPIC_OUTPUT: tickets-labeled
-      KAFKA_TOPIC_DLQ: tickets-labeled-dlq
+      KAFKA_TOPIC_DLQ: tickets-formatted-dlq
     depends_on:
       kafka:
         condition: service_healthy
@@ -142,7 +142,7 @@ services:
       KAFKA_BROKER: kafka:29092
       SOURCE_TOPIC: mailMSG
       TARGET_TOPIC: tickets-formatted
-      DLQ_TOPIC: tickets-formatted-dlq
+      DLQ_TOPIC: mailMSG-dlq
       GROUP_ID: mail-aufbereitung
     depends_on:
       kafka:
