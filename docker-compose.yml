@@ -206,44 +206,6 @@ services:
     networks:
       - kafka-network
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-tickets}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    networks:
-      - kafka-network
-    restart: unless-stopped
-
-  exportdienst:
-    build: ./exportdienst
-    container_name: exportdienst
-    environment:
-      KAFKA_BROKERS: kafka:29092
-      KAFKA_TOPIC: tickets-labeled
-      CONSUMER_GROUP: exportdienst
-      POSTGRES_DSN: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-tickets}?sslmode=disable
-    depends_on:
-      kafka:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    networks:
-      - kafka-network
-    restart: unless-stopped
-
 networks:
   kafka-network:
     driver: bridge
