@@ -123,6 +123,24 @@ A Go-based data export service that persists labeled tickets from Kafka into a P
 - Persists all ticket data to PostgreSQL for durability and reporting
 - Automatically creates the tickets table on startup
 
+See [postgres-exportdienst/README.md](postgres-exportdienst/README.md) for detailed documentation.
+
+#### Discord Exportdienst
+
+A TypeScript/Node.js Discord bot that creates dedicated channels for labeled tickets, enabling team collaboration directly within Discord. The name "discord-exportdienst" (German for "discord export service") reflects its role in exporting ticket data to Discord for collaborative resolution.
+
+**Features:**
+
+- Consumes fully labeled tickets from Kafka topic `tickets-labeled`
+- Smart category routing: automatically routes bug tickets and feature requests to separate Discord categories
+- Creates a new Discord channel for each ticket
+- Posts embeds with ticket details (contact, origin, category, priority, type)
+- Color-codes tickets based on priority (High/Critical = Red, Medium = Yellow, Low = Green)
+- Sanitized channel naming for Discord compatibility
+- Graceful error handling and shutdown
+
+See [discord-exportdienst/README.md](discord-exportdienst/README.md) for detailed documentation.
+
 ### Database Schema
 
 The tickets table is automatically created in PostgreSQL with the following structure:
