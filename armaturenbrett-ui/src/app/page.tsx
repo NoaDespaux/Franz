@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { LayoutDashboard, Ticket, AlertCircle, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Ticket, AlertCircle, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
 
 // API endpoints to our FastAPI backend
 // In production, use NEXT_PUBLIC variables
@@ -17,30 +18,41 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState<any>(null);
   const [ticketsData, setTicketsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   useEffect(() => {
+    let isMounted = true;
     async function fetchData() {
       try {
+        const offset = (page - 1) * limit;
         const [kpiRes, ticketsRes] = await Promise.all([
           fetch(`${API_BASE}/kpis`),
-          fetch(`${API_BASE}/tickets?limit=10`)
+          fetch(`${API_BASE}/tickets?limit=${limit}&offset=${offset}`)
         ]);
 
         if (kpiRes.ok && ticketsRes.ok) {
-          setKpis(await kpiRes.json());
-          setTicketsData(await ticketsRes.json());
+          const kpiData = await kpiRes.json();
+          const tData = await ticketsRes.json();
+          if (isMounted) {
+            setKpis(kpiData);
+            setTicketsData(tData);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
     fetchData();
     // Auto-refresh every 10 seconds
     const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [page]);
 
   if (loading && !kpis) {
     return (
@@ -169,7 +181,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={kpis.by_type} layout="vertical" margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
+                <BarChart data={kpis.by_type} layout="vertical" margin={{ top: 20, right: 30, left: 120, bottom: 5 }}>
                   <XAxis type="number" stroke="#71717a" />
                   <YAxis dataKey="name" type="category" stroke="#71717a" />
                   <Tooltip
@@ -237,16 +249,46 @@ export default function Dashboard() {
                       {t.priority}
                     </Badge>
                   </TableCell>
-                  <TableCell className="max-w-[300px] truncate text-zinc-400">
-                    {t.body.replace(/\n/g, ' ').substring(0, 60)}...
+                  <TableCell className="max-w-[500px] align-top text-zinc-400">
+                    <div className="whitespace-pre-wrap break-words max-h-[150px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+                      {t.body}
+                    </div>
                   </TableCell>
-                  <TableCell className="text-right text-zinc-500">
+                  <TableCell className="text-right text-zinc-500 align-top">
                     {new Date(t.date).toLocaleString()}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+
+          <div className="flex items-center justify-between mt-6">
+            <span className="text-sm text-zinc-400">
+              Showing {ticketsData.total === 0 ? 0 : ((page - 1) * limit) + 1} - {Math.min(page * limit, ticketsData.total)} of {ticketsData.total} tickets
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                onClick={() => setPage(p => p + 1)}
+                disabled={page * limit >= ticketsData.total}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
