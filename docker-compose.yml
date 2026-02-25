@@ -105,7 +105,7 @@ services:
     container_name: etikett
     environment:
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: llama3.1
+      OLLAMA_MODEL: llama3.1:8b
       OLLAMA_TEMPERATURE: 0.2
       OLLAMA_MAX_TOKENS: 256
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
