@@ -191,13 +191,13 @@ services:
       - postgres-network
     restart: unless-stopped
 
-  exportdienst:
-    build: ./exportdienst
-    container_name: exportdienst
+  postgres-exportdienst:
+    build: ./postgres-exportdienst
+    container_name: postgres-exportdienst
     environment:
       KAFKA_BROKERS: kafka:29092
       KAFKA_TOPIC: tickets-labeled
-      CONSUMER_GROUP: exportdienst
+      CONSUMER_GROUP: postgres-exportdienst
       POSTGRES_DSN: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-tickets}?sslmode=disable
     depends_on:
       kafka:

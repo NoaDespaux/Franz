@@ -52,7 +52,7 @@ func loadConfig() *Config {
 	return &Config{
 		KafkaBrokers:  brokers,
 		KafkaTopic:    getEnv("KAFKA_TOPIC", "tickets-labeled"),
-		ConsumerGroup: getEnv("CONSUMER_GROUP", "exportdienst"),
+		ConsumerGroup: getEnv("CONSUMER_GROUP", "postgres-exportdienst"),
 		PostgresDSN:   getEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/tickets?sslmode=disable"),
 	}
 }
@@ -169,5 +169,5 @@ func main() {
 			ticket.FormattedTicket.Contact, ticket.Category, ticket.Priority, ticket.Type)
 	}
 
-	log.Println("exportdienst stopped")
+	log.Println("postgres-exportdienst stopped")
 }
