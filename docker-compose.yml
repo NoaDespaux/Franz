@@ -119,6 +119,8 @@ services:
         condition: service_healthy
       ollama:
         condition: service_healthy
+    networks:
+      - kafka-network
 
   greenmail:
     image: greenmail/standalone:2.0.1
