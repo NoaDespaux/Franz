@@ -140,6 +140,28 @@ CREATE TABLE IF NOT EXISTS tickets (
 )
 ```
 
+#### Armaturenbrett API
+
+A Python-based lightweight FastAPI microservice that queries the PostgreSQL database where tickets are archived. The name "armaturenbrett" (German for "dashboard") groups the visualization components together.
+
+**Features:**
+- Exposes `GET /api/tickets` for paginated access to the ticket feed.
+- Exposes `GET /api/kpis` to dynamically compute PostgreSQL aggregations (Counts by priority, category, origin).
+- Fully documented via auto-generated Swagger UI.
+
+See [armaturenbrett-api/README.md](armaturenbrett-api/README.md) for detailed documentation.
+
+#### Armaturenbrett UI
+
+A Next.js frontend interface styled with Tailwind CSS and Shadcn UI components. It serves as the primary visual entry point for administrators to view and analyze tickets.
+
+**Features:**
+- Polling mechanism to auto-refresh data seamlessly.
+- Visual representations utilizing `recharts` for priorities, categories, and platforms.
+- Responsive data table containing the live feed of correctly formatted tickets.
+
+See [armaturenbrett-ui/README.md](armaturenbrett-ui/README.md) for detailed documentation.
+
 ## Getting Started
 
 ### Prerequisites
