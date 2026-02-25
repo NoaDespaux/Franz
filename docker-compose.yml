@@ -211,6 +211,26 @@ services:
       - postgres-network
     restart: unless-stopped
 
+  discord-exportdienst:
+    build: ./discord-exportdienst
+    container_name: discord-exportdienst
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID}
+      DISCORD_CATEGORY_BUG_ID: ${DISCORD_CATEGORY_BUG_ID}
+      DISCORD_CATEGORY_FEATURE_ID: ${DISCORD_CATEGORY_FEATURE_ID}
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_TOPIC: tickets-labeled
+      CONSUMER_GROUP: discord-exportdienst
+    depends_on:
+      kafka:
+        condition: service_healthy
+      etikett:
+        condition: service_started
+    networks:
+      - kafka-network
+    restart: unless-stopped
+
   armaturenbrett-api:
     build: ./armaturenbrett-api
     container_name: armaturenbrett-api
