@@ -62,10 +62,3 @@ docker compose up -d --build exportdienst
 ```
 
 > Requires `kafka` and `postgres` to be healthy first. Docker Compose handles this via `depends_on`.
-
-## Running Locally
-
-```bash
-go mod download
-go run main.go
-```

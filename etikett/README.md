@@ -64,10 +64,3 @@ docker compose up -d --build etikett
 ```
 
 > Requires `kafka` and `ollama` to be healthy first. Docker Compose handles this via `depends_on`.
-
-## Building Locally
-
-```bash
-./mvnw clean package -DskipTests
-java -jar target/*.jar
-```
